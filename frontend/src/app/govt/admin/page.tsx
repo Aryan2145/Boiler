@@ -1,200 +1,73 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { AdminNav } from "@/components/govt/AdminNav";
 import { GovtHeader } from "@/components/govt/GovtHeader";
-import { Alert } from "@/components/shared/Alert";
-import { Button } from "@/components/shared/Button";
-import { Input, Select } from "@/components/shared/Field";
 import { RequireGovt } from "@/components/shared/RequireAuth";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { GOVT_ROLE_LABELS, type GovtUser } from "@/lib/types";
+import type { GovtUser } from "@/lib/types";
 
-type Form = {
-  name: string;
-  role: string;
-  phone: string;
-  email: string;
-  zone: string;
-};
-
-const EMPTY: Form = { name: "", role: "", phone: "", email: "", zone: "" };
-
-function validate(form: Form) {
-  const errors: Partial<Record<keyof Form, string>> = {};
-  if (!form.name.trim()) errors.name = "Name is required.";
-  if (!form.role) errors.role = "Select a role.";
-  if (!form.phone.trim()) errors.phone = "Phone number is required.";
-  else if (!/^[0-9+\-() ]{7,20}$/.test(form.phone.trim()))
-    errors.phone = "Enter a valid phone number.";
-  if (!form.email.trim()) errors.email = "Email is required.";
-  else if (!/^\S+@\S+\.\S+$/.test(form.email))
-    errors.email = "Enter a valid email address.";
-  if (!form.zone.trim()) errors.zone = "Zone is required.";
-  return errors;
-}
-
-function CreateUserForm({ onCreated }: { onCreated: (user: GovtUser) => void }) {
-  const [form, setForm] = useState<Form>(EMPTY);
-  const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({});
-  const [serverError, setServerError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  function set<K extends keyof Form>(key: K) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setServerError("");
-    setSuccess("");
-
-    const next = validate(form);
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
-
-    setSubmitting(true);
-    try {
-      const user = await api<GovtUser>("/govt/users", {
-        method: "POST",
-        body: form,
-      });
-      onCreated(user);
-      setForm(EMPTY);
-      setSuccess(
-        `${user.name} added. Initial password: Officer@123 — ask them to change it.`,
-      );
-    } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Could not create user.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
+function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <section className="h-fit border border-navy-200 bg-white">
-      <div className="border-b border-navy-100 px-6 pb-4 pt-6">
-        <h2 className="font-display text-xl font-semibold text-navy-950">
-          Create government user
-        </h2>
-        <p className="mt-1 text-sm text-navy-600">
-          New officers sign in at the officer portal with their email.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 px-6 py-6">
-        {serverError && <Alert>{serverError}</Alert>}
-        {success && <Alert tone="success">{success}</Alert>}
-
-        <Input label="Name" name="name" value={form.name} onChange={set("name")} error={errors.name} />
-
-        <Select label="Role" name="role" value={form.role} onChange={set("role")} error={errors.role}>
-          <option value="">Select role…</option>
-          <option value="DIRECTOR">Director</option>
-          <option value="DEPUTY_DIRECTOR">Deputy Director</option>
-          <option value="ASSISTANT_DIRECTOR">Assistant Director</option>
-        </Select>
-
-        <Input
-          label="Phone number"
-          type="tel"
-          name="phone"
-          value={form.phone}
-          onChange={set("phone")}
-          error={errors.phone}
-        />
-        <Input
-          label="Email ID"
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={set("email")}
-          error={errors.email}
-        />
-        <Input
-          label="Zone"
-          name="zone"
-          value={form.zone}
-          onChange={set("zone")}
-          error={errors.zone}
-          hint="e.g. North Zone, Coastal Region"
-        />
-
-        <Button type="submit" loading={submitting} className="mt-1 w-full">
-          Add user
-        </Button>
-      </form>
-    </section>
+    <div className="border border-navy-200 bg-white px-6 py-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-500">
+        {label}
+      </p>
+      <p className="mt-2 font-display text-3xl font-semibold text-navy-950">
+        {value}
+      </p>
+    </div>
   );
 }
 
-function DeleteButton({ onConfirm }: { onConfirm: () => Promise<void> }) {
-  const [arming, setArming] = useState(false);
-  const [busy, setBusy] = useState(false);
+function ActionCard({
+  href,
+  title,
+  description,
+}: {
+  href: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col border border-navy-200 bg-white p-6 transition-colors hover:border-navy-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-navy-900"
+    >
+      <h3 className="font-display text-lg font-semibold text-navy-950">{title}</h3>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-navy-600">
+        {description}
+      </p>
+      <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-navy-900">
+        Open
+        <span aria-hidden className="transition-transform group-hover:translate-x-1">
+          →
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function AdminOverview() {
+  const { session } = useAuth();
+  const [officers, setOfficers] = useState<GovtUser[] | null>(null);
 
   useEffect(() => {
-    if (!arming) return;
-    const t = setTimeout(() => setArming(false), 4000);
-    return () => clearTimeout(t);
-  }, [arming]);
-
-  if (!arming) {
-    return (
-      <button
-        onClick={() => setArming(true)}
-        className="h-8 border border-navy-300 px-3 text-xs font-semibold text-navy-700 transition-colors hover:border-red-500 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
-      >
-        Delete
-      </button>
-    );
-  }
-  return (
-    <button
-      disabled={busy}
-      onClick={async () => {
-        setBusy(true);
-        await onConfirm();
-      }}
-      className="h-8 border border-red-600 bg-red-50 px-3 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50"
-    >
-      {busy ? "Removing…" : "Confirm delete"}
-    </button>
-  );
-}
-
-function AdminDashboard() {
-  const [users, setUsers] = useState<GovtUser[] | null>(null);
-  const [listError, setListError] = useState("");
-
-  const load = useCallback(async () => {
-    setListError("");
-    try {
-      setUsers(await api<GovtUser[]>("/govt/users"));
-    } catch (err) {
-      setListError(err instanceof Error ? err.message : "Could not load users.");
-      setUsers([]);
-    }
+    api<GovtUser[]>("/govt/users")
+      .then((users) => setOfficers(users.filter((u) => u.role !== "ADMIN")))
+      .catch(() => setOfficers([]));
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function handleDelete(id: string) {
-    try {
-      await api(`/govt/users/${id}`, { method: "DELETE" });
-      setUsers((u) => (u ? u.filter((x) => x.id !== id) : u));
-    } catch (err) {
-      setListError(err instanceof Error ? err.message : "Could not delete user.");
-    }
-  }
-
-  const officers = users?.filter((u) => u.role !== "ADMIN") ?? [];
+  const adminName = session?.type === "govt" ? session.user.name : "";
+  const directors = officers?.filter((o) => o.role === "DIRECTOR").length ?? 0;
+  const zones = officers ? new Set(officers.map((o) => o.zone)).size : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-navy-50">
       <GovtHeader />
+      <AdminNav />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:px-8">
         <div className="mb-8">
@@ -202,85 +75,71 @@ function AdminDashboard() {
             Administration
           </p>
           <h1 className="mt-1 font-display text-3xl font-semibold text-navy-950">
-            User management
+            Welcome, {adminName}
           </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-navy-600">
+            Departmental overview and administrative tools for the Boiler
+            Inspection Portal.
+          </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-start">
-          <CreateUserForm
-            onCreated={(user) => setUsers((u) => (u ? [...u, user] : [user]))}
+        {/* Stats */}
+        <section aria-label="Department statistics" className="grid gap-4 sm:grid-cols-3">
+          <StatCard
+            label="Government officers"
+            value={officers === null ? "—" : String(officers.length)}
           />
+          <StatCard
+            label="Directors"
+            value={officers === null ? "—" : String(directors)}
+          />
+          <StatCard label="Zones covered" value={officers === null ? "—" : String(zones)} />
+        </section>
 
-          <section className="border border-navy-200 bg-white">
-            <div className="flex items-baseline justify-between border-b border-navy-100 px-6 pb-4 pt-6">
-              <h2 className="font-display text-xl font-semibold text-navy-950">
-                Government users
-              </h2>
-              <p className="text-sm font-medium text-navy-500">
-                {officers.length} officer{officers.length === 1 ? "" : "s"}
+        {/* Quick actions */}
+        <section aria-label="Administrative tools" className="mt-10">
+          <h2 className="mb-4 border-b-2 border-navy-900 pb-2 font-display text-xl font-semibold text-navy-950">
+            Administrative tools
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ActionCard
+              href="/govt/admin/users"
+              title="User management"
+              description="View, add and remove government officers — directors, deputy directors and assistant directors."
+            />
+            <div className="flex flex-col border border-dashed border-navy-300 bg-navy-50/50 p-6">
+              <h3 className="font-display text-lg font-semibold text-navy-400">
+                Inspection applications
+              </h3>
+              <p className="mt-1 flex-1 text-sm leading-relaxed text-navy-400">
+                Review and process contractor applications.
               </p>
+              <span className="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-400">
+                Coming in Phase 2
+              </span>
             </div>
-
-            <div className="px-6 py-4">
-              {listError && (
-                <div className="mb-4">
-                  <Alert>{listError}</Alert>
-                </div>
-              )}
-
-              {users === null ? (
-                <p className="py-8 text-center text-sm text-navy-500">Loading users…</p>
-              ) : officers.length === 0 ? (
-                <p className="py-8 text-center text-sm text-navy-500">
-                  No officers yet. Create the first one using the form.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b-2 border-navy-900 text-[11px] uppercase tracking-wider text-navy-600">
-                        <th scope="col" className="py-2.5 pr-4 font-semibold">Name</th>
-                        <th scope="col" className="py-2.5 pr-4 font-semibold">Role</th>
-                        <th scope="col" className="py-2.5 pr-4 font-semibold">Contact</th>
-                        <th scope="col" className="py-2.5 pr-4 font-semibold">Zone</th>
-                        <th scope="col" className="py-2.5 text-right font-semibold">
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {officers.map((u) => (
-                        <tr key={u.id} className="border-b border-navy-100">
-                          <td className="py-3 pr-4 font-semibold text-navy-900">{u.name}</td>
-                          <td className="py-3 pr-4 text-navy-700">
-                            {GOVT_ROLE_LABELS[u.role]}
-                          </td>
-                          <td className="py-3 pr-4 text-navy-700">
-                            <div>{u.email}</div>
-                            <div className="text-xs text-navy-500">{u.phone}</div>
-                          </td>
-                          <td className="py-3 pr-4 text-navy-700">{u.zone}</td>
-                          <td className="py-3 text-right">
-                            <DeleteButton onConfirm={() => handleDelete(u.id)} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="flex flex-col border border-dashed border-navy-300 bg-navy-50/50 p-6">
+              <h3 className="font-display text-lg font-semibold text-navy-400">
+                Reports
+              </h3>
+              <p className="mt-1 flex-1 text-sm leading-relaxed text-navy-400">
+                Departmental statistics and zone-wise summaries.
+              </p>
+              <span className="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-400">
+                Coming in Phase 2
+              </span>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </main>
     </div>
   );
 }
 
-export default function AdminDashboardPage() {
+export default function AdminOverviewPage() {
   return (
     <RequireGovt role="admin">
-      <AdminDashboard />
+      <AdminOverview />
     </RequireGovt>
   );
 }

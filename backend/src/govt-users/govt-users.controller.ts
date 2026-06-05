@@ -4,12 +4,14 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateGovtUserDto } from './dto/create-govt-user.dto';
+import { UpdateGovtUserDto } from './dto/update-govt-user.dto';
 import { GovtUsersService } from './govt-users.service';
 
 @Controller('govt/users')
@@ -25,6 +27,16 @@ export class GovtUsersController {
   @Post()
   create(@Body() dto: CreateGovtUserDto) {
     return this.govtUsersService.create(dto);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.govtUsersService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateGovtUserDto) {
+    return this.govtUsersService.update(id, dto);
   }
 
   @Delete(':id')

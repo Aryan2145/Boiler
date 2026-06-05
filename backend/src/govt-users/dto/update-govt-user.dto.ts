@@ -2,48 +2,49 @@ import {
   IsEmail,
   IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { OFFICER_ROLES } from './create-govt-user.dto';
+import type { OfficerRole } from './create-govt-user.dto';
 
-export const OFFICER_ROLES = [
-  'DIRECTOR',
-  'DEPUTY_DIRECTOR',
-  'ASSISTANT_DIRECTOR',
-] as const;
-
-export type OfficerRole = (typeof OFFICER_ROLES)[number];
-
-export class CreateGovtUserDto {
+export class UpdateGovtUserDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Name is required.' })
+  @IsNotEmpty({ message: 'Name cannot be empty.' })
   @MaxLength(120)
-  name: string;
+  name?: string;
 
+  @IsOptional()
   @IsIn(OFFICER_ROLES, {
     message: 'Role must be Director, Deputy Director or Assistant Director.',
   })
-  role: OfficerRole;
+  role?: OfficerRole;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Phone number is required.' })
   @Matches(/^[0-9+\-() ]{7,20}$/, {
     message: 'Phone must be a valid phone number.',
   })
-  phone: string;
+  phone?: string;
 
+  @IsOptional()
   @IsEmail({}, { message: 'A valid email address is required.' })
-  email: string;
+  email?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Zone is required.' })
+  @IsNotEmpty({ message: 'Zone cannot be empty.' })
   @MaxLength(120)
-  zone: string;
+  zone?: string;
 
+  /** Optional — when provided, replaces the user's password. */
+  @IsOptional()
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters.' })
   @MaxLength(72)
-  password: string;
+  password?: string;
 }
